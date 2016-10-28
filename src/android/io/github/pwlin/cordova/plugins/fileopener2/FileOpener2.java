@@ -28,9 +28,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.support.v4.content.FileProvider;
 //import android.util.Log;
 
 import org.apache.cordova.CordovaPlugin;
@@ -42,7 +44,7 @@ public class FileOpener2 extends CordovaPlugin {
 
 	/**
 	 * Executes the request and returns a boolean.
-	 * 
+	 *
 	 * @param action
 	 *            The action to execute.
 	 * @param args
@@ -54,7 +56,7 @@ public class FileOpener2 extends CordovaPlugin {
 	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 		if (action.equals("open")) {
 			this._open(args.getString(0), args.getString(1), callbackContext);
-		} 
+		}
 		else if (action.equals("uninstall")) {
 			this._uninstall(args.getString(0), callbackContext);
 		}
@@ -91,15 +93,18 @@ public class FileOpener2 extends CordovaPlugin {
 		File file = new File(fileName);
 		if (file.exists()) {
 			try {
-				Uri path = Uri.fromFile(file);
+				Context context = cordova.getActivity();
+				String authority = context.getPackageName() + ".fileprovider";
+				Uri path = FileProvider.getUriForFile(context, authority, file);
 				Intent intent = new Intent(Intent.ACTION_VIEW);
 				intent.setDataAndType(path, contentType);
 				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+				intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 				/*
 				 * @see
 				 * http://stackoverflow.com/questions/14321376/open-an-activity-from-a-cordovaplugin
 				 */
-				cordova.getActivity().startActivity(intent);
+				context.startActivity(intent);
 				//cordova.getActivity().startActivity(Intent.createChooser(intent,"Open File in..."));
 				callbackContext.success();
 			} catch (android.content.ActivityNotFoundException e) {
@@ -115,7 +120,7 @@ public class FileOpener2 extends CordovaPlugin {
 			callbackContext.error(errorObj);
 		}
 	}
-	
+
 	private void _uninstall(String packageId, CallbackContext callbackContext) throws JSONException {
 		if (this._appIsInstalled(packageId)) {
 			Intent intent = new Intent(Intent.ACTION_UNINSTALL_PACKAGE);
@@ -130,7 +135,7 @@ public class FileOpener2 extends CordovaPlugin {
 			callbackContext.error(errorObj);
 		}
 	}
-	
+
 	private boolean _appIsInstalled(String packageId) {
 		PackageManager pm = cordova.getActivity().getPackageManager();
         boolean appInstalled = false;
