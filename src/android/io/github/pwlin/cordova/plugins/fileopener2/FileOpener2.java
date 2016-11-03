@@ -94,12 +94,20 @@ public class FileOpener2 extends CordovaPlugin {
         if (file.exists()) {
             try {
                 Context context = cordova.getActivity();
-                String authority = context.getPackageName() + ".fileprovider";
-                Uri path = FileProvider.getUriForFile(context, authority, file);
+                Uri path = Uri.fromFile(file);
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    String authority = context.getPackageName() + ".fileprovider";
+                    path = FileProvider.getUriForFile(context, authority, file);
+                }
+
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setDataAndType(path, contentType);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                }
                 /*
                  * @see
                  * http://stackoverflow.com/questions/14321376/open-an-activity-from-a-cordovaplugin
